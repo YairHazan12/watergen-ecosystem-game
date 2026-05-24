@@ -1,5 +1,9 @@
 # WATERGEN — Episode One: *The Ecosystem*
 
+### ▶ Play it online: **https://yairhazan12.github.io/watergen-ecosystem-game/**
+*(Repo: https://github.com/YairHazan12/watergen-ecosystem-game — edits pushed to `main` auto-redeploy in ~1 min.)*
+
+
 A Telltale-style ("The Walking Dead") narrative decision game for the
 **Human Capital: From Ventures to Innovative Organizations** specialist
 presentation. You play the **CEO of Watergen** and live the company's real
