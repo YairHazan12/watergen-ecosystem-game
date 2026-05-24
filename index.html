@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WATERGEN — Episode One: The Ecosystem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- =================== STAGE =================== -->
+  <div id="stage" class="stage">
+    <div id="bg" class="bg bg-black"></div>
+    <div class="grain"></div>
+    <div class="vignette"></div>
+
+    <!-- character figures -->
+    <div id="npc" class="figure npc"></div>
+    <div id="ceo" class="figure ceo"></div>
+
+    <!-- top HUD -->
+    <header id="hud" class="hud hidden">
+      <div class="hud-title">WATERGEN</div>
+      <div class="meters">
+        <div class="meter" data-stat="talent">
+          <span class="m-ico">👥</span>
+          <span class="m-label">Talent</span>
+          <div class="m-track"><div class="m-fill"></div></div>
+        </div>
+        <div class="meter" data-stat="capital">
+          <span class="m-ico">💧</span>
+          <span class="m-label">Capital</span>
+          <div class="m-track"><div class="m-fill"></div></div>
+        </div>
+        <div class="meter" data-stat="network">
+          <span class="m-ico">🔗</span>
+          <span class="m-label">Network</span>
+          <div class="m-track"><div class="m-fill"></div></div>
+        </div>
+        <div class="meter" data-stat="impact">
+          <span class="m-ico">🌍</span>
+          <span class="m-label">Impact</span>
+          <div class="m-track"><div class="m-fill"></div></div>
+        </div>
+      </div>
+      <div id="floaties" class="floaties"></div>
+    </header>
+
+    <!-- in-game audio controls -->
+    <div id="audio-ctrls" class="audio-ctrls hidden">
+      <button id="btn-music" class="actrl on" title="Toggle background music">♪</button>
+      <button id="btn-voice" class="actrl on" title="Toggle narration">🔊</button>
+    </div>
+
+    <!-- chapter banner -->
+    <div id="chapter" class="chapter-banner hidden">
+      <div class="chapter-kicker"></div>
+      <div class="chapter-title"></div>
+    </div>
+
+    <!-- dialogue -->
+    <div id="dialogue" class="dialogue hidden">
+      <div id="speaker" class="speaker"></div>
+      <div id="line" class="line"></div>
+      <div id="cont" class="continue-hint hidden">▸ click / space</div>
+    </div>
+
+    <!-- choices -->
+    <div id="choices" class="choices hidden"></div>
+    <div id="timerbar" class="timerbar hidden"><div class="timerbar-fill"></div></div>
+
+    <!-- toast -->
+    <div id="toasts" class="toasts"></div>
+
+    <!-- =================== TITLE SCREEN =================== -->
+    <div id="title-screen" class="screen title-screen">
+      <div class="title-art">
+        <div class="drop">💧</div>
+        <h1 class="wordmark">WATER<span>GEN</span></h1>
+        <div class="episode">EPISODE ONE</div>
+        <div class="subtitle">THE ECOSYSTEM</div>
+      </div>
+      <p class="logline">You are the CEO of Watergen — the venture that pulls drinking water out of thin air.<br/>
+      The technology is real. The hard part is the ecosystem around it: <b>macro, meso, micro</b>.</p>
+
+      <div class="name-row">
+        <label for="ceo-name">Your name, CEO:</label>
+        <input id="ceo-name" type="text" maxlength="22" placeholder="CEO" autocomplete="off" />
+      </div>
+
+      <button id="start-btn" class="btn btn-primary">▶ Begin Episode</button>
+
+      <div class="toggles">
+        <label class="switch"><input type="checkbox" id="academic-toggle" checked /> <span>Academic mode (show the ecosystem lens)</span></label>
+        <label class="switch"><input type="checkbox" id="music-toggle" checked /> <span>Background music</span></label>
+        <label class="switch"><input type="checkbox" id="voice-toggle" checked /> <span>Character narration (text-to-speech)</span></label>
+      </div>
+      <div class="credits-note">Based on Almor &amp; Berliner (2024), “The Role of the Ecosystem” · Case study: Watergen<br/>Liora Eichhorn · Itay Bardin · Jonathan Sella · Yair Hazan</div>
+    </div>
+
+    <!-- =================== DEBRIEF SCREEN =================== -->
+    <div id="debrief-screen" class="screen debrief-screen hidden"></div>
+
+  </div>
+
+  <script src="story.js"></script>
+  <script src="engine.js"></script>
+</body>
+</html>
