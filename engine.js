@@ -36,85 +36,32 @@
   };
 
   /* ====================================================================
-     MUSIC  —  warm, upbeat generative loop (Web Audio, no files)
-     A gentle major-key progression (C–G–Am–F) with a soft pad, light
-     bass, and a bright plucked arpeggio. Hopeful, not droney.
+     MUSIC  —  real lo-fi track, looped, with gentle fades
+     "Chill Out" by Torley Wong (CC BY-SA 3.0), bundled in assets/audio.
      ==================================================================== */
   const Music = (function () {
-    let ctx = null, master = null, filter = null, on = true, playing = false;
-    let stepTimer = null, step = 0;
-    const BPM = 86, eighth = (60 / BPM) / 2;
-    // progression: each chord has a soft pad, a bass note, and arp tones
-    const prog = [
-      { pad: [261.63, 329.63, 392.00], bass: 130.81, arp: [523.25, 659.25, 783.99, 659.25] }, // C
-      { pad: [392.00, 493.88, 587.33], bass: 196.00, arp: [587.33, 783.99, 587.33, 493.88] }, // G
-      { pad: [329.63, 392.00, 523.25], bass: 220.00, arp: [659.25, 523.25, 659.25, 880.00] }, // Am
-      { pad: [349.23, 440.00, 523.25], bass: 174.61, arp: [523.25, 698.46, 523.25, 440.00] }, // F
-    ];
-    const pad = [], padG = [];
-    let bassOsc = null, bassG = null;
-    function ensure() {
-      if (ctx) return;
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      ctx = new AC();
-      master = ctx.createGain(); master.gain.value = 0;
-      filter = ctx.createBiquadFilter(); filter.type = "lowpass";
-      filter.frequency.value = 2400; filter.Q.value = 0.2;
-      filter.connect(master); master.connect(ctx.destination);
-      for (let i = 0; i < 3; i++) {
-        const o = ctx.createOscillator(); o.type = "sine";
-        const g = ctx.createGain(); g.gain.value = 0;
-        o.connect(g); g.connect(filter); o.start();
-        pad.push(o); padG.push(g);
-      }
-      bassOsc = ctx.createOscillator(); bassOsc.type = "triangle";
-      bassG = ctx.createGain(); bassG.gain.value = 0;
-      bassOsc.connect(bassG); bassG.connect(filter); bassOsc.start();
-    }
-    function setChord(i) {
-      const c = prog[i], t = ctx.currentTime;
-      pad.forEach((o, k) => {
-        o.frequency.linearRampToValueAtTime(c.pad[k], t + 1.2);
-        padG[k].gain.linearRampToValueAtTime(0.028, t + 1.2);
-      });
-      bassOsc.frequency.linearRampToValueAtTime(c.bass, t + 0.3);
-      bassG.gain.linearRampToValueAtTime(0.05, t + 0.3);
-    }
-    function pluck(freq, vol) {
-      const t = ctx.currentTime;
-      const o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = freq;
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(vol, t + 0.012);
-      g.gain.exponentialRampToValueAtTime(0.0006, t + 0.42);
-      o.connect(g); g.connect(filter); o.start(t); o.stop(t + 0.45);
-    }
-    function tick() {
-      if (!playing || !ctx) return;
-      const i = ((step / 8) | 0) % prog.length, local = step % 8;
-      if (local === 0) setChord(i);
-      const arp = prog[i].arp;
-      // bright on the beat, softer off the beat; rest occasionally for lightness
-      if (local !== 7) pluck(arp[local % arp.length], local % 2 === 0 ? 0.06 : 0.038);
-      step++;
+    const audioEl = document.getElementById("bg-music");
+    let on = true, fadeTimer = null;
+    const VOL = 0.34;
+    if (audioEl) audioEl.volume = 0;
+    function fadeTo(target, ms) {
+      if (!audioEl) return;
+      clearInterval(fadeTimer);
+      const start = audioEl.volume, steps = 24, dt = Math.max(16, ms / steps);
+      let i = 0;
+      fadeTimer = setInterval(() => {
+        i++;
+        audioEl.volume = Math.max(0, Math.min(1, start + (target - start) * (i / steps)));
+        if (i >= steps) { clearInterval(fadeTimer); if (target === 0) { try { audioEl.pause(); } catch (e) {} } }
+      }, dt);
     }
     function play() {
-      if (!on) return;
-      ensure(); if (!ctx) return;
-      if (ctx.state === "suspended") ctx.resume();
-      if (playing) return; playing = true; step = 0;
-      master.gain.cancelScheduledValues(ctx.currentTime);
-      master.gain.linearRampToValueAtTime(0.55, ctx.currentTime + 2.5);
-      setChord(0);
-      stepTimer = setInterval(tick, eighth * 1000);
+      if (!on || !audioEl) return;
+      const p = audioEl.play();
+      if (p && p.catch) p.catch(() => {});
+      fadeTo(VOL, 1600);
     }
-    function stop() {
-      if (!ctx || !playing) return; playing = false;
-      clearInterval(stepTimer);
-      master.gain.cancelScheduledValues(ctx.currentTime);
-      master.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.0);
-    }
+    function stop() { fadeTo(0, 800); }
     function setOn(v) { on = v; if (v) play(); else stop(); }
     return { play, stop, setOn, isOn: () => on };
   })();
@@ -274,20 +221,57 @@
     </svg>`;
   }
 
-  // CEO over-the-shoulder foreground silhouette (back of head + shoulder)
+  // CEO over-the-shoulder foreground silhouette — back-3/4 head + near shoulder,
+  // rim-lit by the scene so it reads as a cinematic "shoulder-cam" figure.
   function ceoSilhouette() {
     return `<svg viewBox="0 0 360 460" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="rim" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#0a1a24"/><stop offset="1" stop-color="#06121a"/>
+        <linearGradient id="ceoBody" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#102836"/>
+          <stop offset=".5" stop-color="#0a1c28"/>
+          <stop offset="1" stop-color="#04101a"/>
         </linearGradient>
+        <radialGradient id="ceoHi" cx=".35" cy=".3" r=".7">
+          <stop offset="0" stop-color="#1c3e4e" stop-opacity=".5"/>
+          <stop offset="1" stop-color="#1c3e4e" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="ceoGlow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="3.2"/>
+        </filter>
+        <clipPath id="ceoClip">
+          <path d="M70 460 C64 360 96 320 150 306 C182 298 200 286 206 262
+                   C210 246 206 232 200 220 C188 196 184 150 196 116
+                   C210 76 248 54 286 60 C326 66 352 104 350 150
+                   C348 196 330 224 306 240 C296 247 292 258 296 272
+                   C304 298 336 308 360 316 L360 460 Z"/>
+        </clipPath>
       </defs>
-      <path d="M40 460 C30 300 70 250 150 240 C210 232 250 196 250 150
-               C250 96 300 70 340 84 L360 460 Z" fill="url(#rim)"/>
-      <path d="M250 150 C250 196 210 232 150 240 C90 248 50 300 44 420"
-            fill="none" stroke="#38d6e6" stroke-width="3" opacity=".45"/>
-      <ellipse cx="232" cy="120" rx="56" ry="64" fill="#081620"/>
-      <path d="M196 96 q36 -26 72 0" stroke="#38d6e6" stroke-width="3" opacity=".35" fill="none"/>
+
+      <!-- solid silhouette: head turned away, near shoulder fills bottom-right -->
+      <path d="M70 460 C64 360 96 320 150 306 C182 298 200 286 206 262
+               C210 246 206 232 200 220 C188 196 184 150 196 116
+               C210 76 248 54 286 60 C326 66 352 104 350 150
+               C348 196 330 224 306 240 C296 247 292 258 296 272
+               C304 298 336 308 360 316 L360 460 Z" fill="url(#ceoBody)"/>
+
+      <!-- form shading + suit, clipped so nothing spills past the outline -->
+      <g clip-path="url(#ceoClip)">
+        <ellipse cx="232" cy="150" rx="74" ry="96" fill="url(#ceoHi)"/>
+        <path d="M206 262 C198 296 174 308 146 314 C176 322 194 372 196 460 L150 460
+                 C150 374 130 332 96 322 C134 308 198 300 206 262 Z" fill="#0b2230" opacity=".55"/>
+        <path d="M254 270 C264 298 294 308 322 318 C302 326 290 374 292 460 L322 460
+                 C322 360 318 322 300 302 C288 286 268 280 254 270 Z" fill="#081d29" opacity=".5"/>
+        <path d="M214 256 q40 -6 44 12" stroke="#16384a" stroke-width="6" fill="none" stroke-linecap="round" opacity=".6"/>
+      </g>
+
+      <!-- rim light: scene light catches the scene-facing contour -->
+      <path id="ceoRim" d="M244 56 C214 58 198 92 196 120 C194 150 186 196 200 220
+                           C207 233 211 247 206 262 C199 288 180 300 150 307
+                           C116 315 86 338 74 386" fill="none" stroke-linecap="round"/>
+      <use href="#ceoRim" stroke="#38d6e6" stroke-width="7" opacity=".35" filter="url(#ceoGlow)"/>
+      <use href="#ceoRim" stroke="#8af2ff" stroke-width="2.4" opacity=".92"/>
+      <path d="M244 56 C268 54 288 66 298 90" fill="none" stroke="#8af2ff" stroke-width="2" opacity=".35" stroke-linecap="round"/>
+      <path d="M360 320 C336 312 312 306 300 286" fill="none" stroke="#2aa7b8" stroke-width="2" opacity=".3" stroke-linecap="round"/>
     </svg>`;
   }
 

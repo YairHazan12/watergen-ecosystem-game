@@ -142,8 +142,13 @@ so the game runs **offline** in class:
   per real executive, in `assets/characters/*.svg`. DiceBear core is free; the
   *avataaars* set is free to use (originally by Pablo Stanley).
 - **Backgrounds** — photos from **Pexels** (free license, no attribution
-  required, commercial use OK) in `assets/bg/*.jpg`: a dark workshop (cold open),
-  boardroom, night-city office, government hall, conference stage, desert.
+  required, commercial use OK) in `assets/bg/*.jpg`: a bright lab (cold open),
+  blue meeting room, sunny city office, government hall, bright conference room, desert.
+- **Music** — *“Chill Out”* by **Torley Wong**, licensed **CC BY-SA 3.0**
+  (via the Internet Archive), in `assets/audio/chillout.mp3`. Looped, soft, with
+  a mute toggle. Attribution is required by the license (shown on the title screen).
+- **Narration** — live browser text-to-speech (Web Speech API). Quality depends
+  on the computer's installed voices; use the 🔊 toggle to mute and read lines aloud.
 
 > If you want to swap any image, just replace the file in `assets/` (keep the
 > same filename) or edit the path in `story.js` (characters) / `style.css`
@@ -157,6 +162,7 @@ story.js            ALL content: real cast, scenes, choices, endings  ← edit t
 engine.js           game engine + debrief (citations & your names)
 assets/characters/  DiceBear avatars (the exec cast)
 assets/bg/          Pexels scene photos
+assets/audio/       background music (chillout.mp3)
 README.md           this file
 ```
 
