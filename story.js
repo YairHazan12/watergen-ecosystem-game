@@ -35,11 +35,11 @@ const STORY = {
 
   /* ============== COLD OPEN — 2009 ============== */
   open1: { bg:"lab", npc:null, ceo:false, speaker:"",
-    text:"Rishon LeZion, Israel. 2009. A rented industrial unit, past midnight. A machine you and your army-unit friends built is humming in the dark.",
+    text:"Rishon LeZion, Israel. 2009. A bright workshop full of morning light. A machine you and your army-unit friends built has been running all night — and any moment now, it could change everything.",
     next:"open2" },
 
   open2: { bg:"lab", npc:null, ceo:false, speaker:"",
-    text:"Then — a sound. Drip. Drip. The first liters of clean drinking water, pulled straight out of the desert air. The room goes silent, then erupts.",
+    text:"Then — a sound. Drip. Drip. The first clean drinking water, pulled straight out of thin air. The whole room erupts in cheers.",
     next:"open3" },
 
   open3: { bg:"lab", npc:"yarden", ceo:true,

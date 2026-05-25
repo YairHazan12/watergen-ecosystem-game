@@ -36,19 +36,23 @@
   };
 
   /* ====================================================================
-     MUSIC  —  soft generative ambient (Web Audio, no files)
+     MUSIC  —  warm, upbeat generative loop (Web Audio, no files)
+     A gentle major-key progression (C–G–Am–F) with a soft pad, light
+     bass, and a bright plucked arpeggio. Hopeful, not droney.
      ==================================================================== */
   const Music = (function () {
     let ctx = null, master = null, filter = null, on = true, playing = false;
-    let chordTimer = null, bellTimer = null, chordIdx = 0;
-    const oscs = [];
-    // gentle low chords (Hz): C — Am — F — G
-    const chords = [
-      [130.81, 196.00, 261.63, 329.63],
-      [110.00, 164.81, 220.00, 329.63],
-      [174.61, 220.00, 261.63, 349.23],
-      [196.00, 246.94, 293.66, 392.00],
+    let stepTimer = null, step = 0;
+    const BPM = 86, eighth = (60 / BPM) / 2;
+    // progression: each chord has a soft pad, a bass note, and arp tones
+    const prog = [
+      { pad: [261.63, 329.63, 392.00], bass: 130.81, arp: [523.25, 659.25, 783.99, 659.25] }, // C
+      { pad: [392.00, 493.88, 587.33], bass: 196.00, arp: [587.33, 783.99, 587.33, 493.88] }, // G
+      { pad: [329.63, 392.00, 523.25], bass: 220.00, arp: [659.25, 523.25, 659.25, 880.00] }, // Am
+      { pad: [349.23, 440.00, 523.25], bass: 174.61, arp: [523.25, 698.46, 523.25, 440.00] }, // F
     ];
+    const pad = [], padG = [];
+    let bassOsc = null, bassG = null;
     function ensure() {
       if (ctx) return;
       const AC = window.AudioContext || window.webkitAudioContext;
@@ -56,51 +60,60 @@
       ctx = new AC();
       master = ctx.createGain(); master.gain.value = 0;
       filter = ctx.createBiquadFilter(); filter.type = "lowpass";
-      filter.frequency.value = 900; filter.Q.value = 0.4;
+      filter.frequency.value = 2400; filter.Q.value = 0.2;
       filter.connect(master); master.connect(ctx.destination);
-      for (let i = 0; i < 4; i++) {
-        const o = ctx.createOscillator(); o.type = i % 2 ? "sine" : "triangle";
+      for (let i = 0; i < 3; i++) {
+        const o = ctx.createOscillator(); o.type = "sine";
         const g = ctx.createGain(); g.gain.value = 0;
         o.connect(g); g.connect(filter); o.start();
-        oscs.push({ o, g });
+        pad.push(o); padG.push(g);
       }
-      const lfo = ctx.createOscillator(); lfo.frequency.value = 0.06;
-      const lfoG = ctx.createGain(); lfoG.gain.value = 280;
-      lfo.connect(lfoG); lfoG.connect(filter.frequency); lfo.start();
+      bassOsc = ctx.createOscillator(); bassOsc.type = "triangle";
+      bassG = ctx.createGain(); bassG.gain.value = 0;
+      bassOsc.connect(bassG); bassG.connect(filter); bassOsc.start();
     }
-    function setChord(idx) {
-      const c = chords[idx % chords.length], t = ctx.currentTime;
-      oscs.forEach((osc, i) => {
-        osc.o.frequency.linearRampToValueAtTime(c[i % c.length], t + 3);
-        osc.g.gain.linearRampToValueAtTime(0.05, t + 3);
+    function setChord(i) {
+      const c = prog[i], t = ctx.currentTime;
+      pad.forEach((o, k) => {
+        o.frequency.linearRampToValueAtTime(c.pad[k], t + 1.2);
+        padG[k].gain.linearRampToValueAtTime(0.028, t + 1.2);
       });
+      bassOsc.frequency.linearRampToValueAtTime(c.bass, t + 0.3);
+      bassG.gain.linearRampToValueAtTime(0.05, t + 0.3);
     }
-    function bell() {
-      if (!playing || !ctx) return;
-      const c = chords[chordIdx], note = c[(Math.random() * c.length) | 0] * 2, t = ctx.currentTime;
-      const o = ctx.createOscillator(); o.type = "sine"; o.frequency.value = note;
+    function pluck(freq, vol) {
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = freq;
       const g = ctx.createGain();
       g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.045, t + 0.05);
-      g.gain.exponentialRampToValueAtTime(0.0008, t + 1.7);
-      o.connect(g); g.connect(filter); o.start(t); o.stop(t + 1.8);
+      g.gain.linearRampToValueAtTime(vol, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0006, t + 0.42);
+      o.connect(g); g.connect(filter); o.start(t); o.stop(t + 0.45);
+    }
+    function tick() {
+      if (!playing || !ctx) return;
+      const i = ((step / 8) | 0) % prog.length, local = step % 8;
+      if (local === 0) setChord(i);
+      const arp = prog[i].arp;
+      // bright on the beat, softer off the beat; rest occasionally for lightness
+      if (local !== 7) pluck(arp[local % arp.length], local % 2 === 0 ? 0.06 : 0.038);
+      step++;
     }
     function play() {
       if (!on) return;
       ensure(); if (!ctx) return;
       if (ctx.state === "suspended") ctx.resume();
-      if (playing) return; playing = true;
+      if (playing) return; playing = true; step = 0;
       master.gain.cancelScheduledValues(ctx.currentTime);
-      master.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 4);
-      setChord(chordIdx);
-      chordTimer = setInterval(() => { chordIdx = (chordIdx + 1) % chords.length; setChord(chordIdx); }, 12000);
-      bellTimer = setInterval(bell, 2300);
+      master.gain.linearRampToValueAtTime(0.55, ctx.currentTime + 2.5);
+      setChord(0);
+      stepTimer = setInterval(tick, eighth * 1000);
     }
     function stop() {
       if (!ctx || !playing) return; playing = false;
-      clearInterval(chordTimer); clearInterval(bellTimer);
+      clearInterval(stepTimer);
       master.gain.cancelScheduledValues(ctx.currentTime);
-      master.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.2);
+      master.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.0);
     }
     function setOn(v) { on = v; if (v) play(); else stop(); }
     return { play, stop, setOn, isOn: () => on };
@@ -111,17 +124,37 @@
      ==================================================================== */
   const Voice = (function () {
     const synth = window.speechSynthesis || null;
-    let on = true, voices = [];
-    function loadVoices() { if (synth) voices = synth.getVoices().filter(v => /^en/i.test(v.lang)); }
-    if (synth) { loadVoices(); synth.onvoiceschanged = loadVoices; }
-    // per-character delivery (pitch/rate + preferred voice slot)
+    let on = true, all = [], ranked = [];
+    // novelty / robotic / low-quality voices to AVOID (the "creepy" ones)
+    const BLACKLIST = /(albert|bad news|bahh|bells|boing|bubbles|cellos|wobble|deranged|good news|jester|organ|superstar|trinoids|whisper|zarvox|junior|ralph|fred|kathy|princess|bruce|agnes|vicki|victoria|eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley|hysterical|pipe|wobble)/i;
+    // natural-sounding voices in rough preference order
+    const GOOD = ["samantha","ava","allison","susan","zoe","joelle","nicky","tom","aaron","alex",
+      "daniel","arthur","oliver","serena","karen","moira","tessa","fiona","nathan","evan",
+      "google us english","google uk english female","google uk english male",
+      "microsoft aria","microsoft jenny","microsoft guy","microsoft zira","microsoft david"];
+    function rank() {
+      if (!synth) return;
+      all = synth.getVoices().filter(v => /^en/i.test(v.lang) && !BLACKLIST.test(v.name));
+      const score = v => {
+        const n = v.name.toLowerCase(); let s = 0;
+        if (/(enhanced|premium|natural|neural|siri)/i.test(v.name)) s += 100;
+        const gi = GOOD.findIndex(g => n.includes(g));
+        if (gi >= 0) s += (80 - gi);
+        if (v.localService) s += 10;
+        if (/en[-_]us/i.test(v.lang)) s += 5;
+        return s;
+      };
+      ranked = all.slice().sort((a, b) => score(b) - score(a));
+    }
+    if (synth) { rank(); synth.onvoiceschanged = rank; }
+    // natural pitch/rate; characters differ mainly by which good voice they use
     const profiles = {
-      yarden:  { pitch: 0.95, rate: 0.97, vi: 0 },
-      sharon:  { pitch: 1.12, rate: 1.00, vi: 1 },
-      chen:    { pitch: 1.06, rate: 1.05, vi: 2 },
-      roni:    { pitch: 1.02, rate: 1.07, vi: 3 },
-      michael: { pitch: 0.82, rate: 0.90, vi: 4 },
-      _narr:   { pitch: 0.96, rate: 0.97, vi: 5 },
+      yarden:  { pitch: 1.00, rate: 1.00, vi: 0 },
+      sharon:  { pitch: 1.05, rate: 1.00, vi: 1 },
+      chen:    { pitch: 1.00, rate: 1.04, vi: 2 },
+      roni:    { pitch: 1.03, rate: 1.05, vi: 3 },
+      michael: { pitch: 0.96, rate: 0.96, vi: 4 },
+      _narr:   { pitch: 1.00, rate: 0.98, vi: 5 },
     };
     function clean(t) { return t.replace(/[“”"]/g, "").replace(/\s+/g, " ").trim(); }
     function speak(text, charId) {
@@ -129,7 +162,8 @@
       synth.cancel();
       const u = new SpeechSynthesisUtterance(clean(text));
       const p = profiles[charId] || profiles._narr;
-      if (voices.length) u.voice = voices[p.vi % voices.length];
+      const pool = ranked.length ? ranked : all;
+      if (pool.length) u.voice = pool[p.vi % pool.length];
       u.pitch = p.pitch; u.rate = p.rate; u.volume = 1;
       try { synth.speak(u); } catch (e) {}
     }
