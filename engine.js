@@ -18,8 +18,8 @@
     title: $("title-screen"), debrief: $("debrief-screen"),
     startBtn: $("start-btn"), nameInput: $("ceo-name"),
     academic: $("academic-toggle"),
-    musicToggle: $("music-toggle"), voiceToggle: $("voice-toggle"),
-    audioCtrls: $("audio-ctrls"), btnMusic: $("btn-music"), btnVoice: $("btn-voice"),
+    musicToggle: $("music-toggle"),
+    audioCtrls: $("audio-ctrls"), btnMusic: $("btn-music"),
   };
 
   /* ---------------- STATE ---------------- */
@@ -64,59 +64,6 @@
     function stop() { fadeTo(0, 800); }
     function setOn(v) { on = v; if (v) play(); else stop(); }
     return { play, stop, setOn, isOn: () => on };
-  })();
-
-  /* ====================================================================
-     VOICE  —  character narration (Web Speech, no files)
-     ==================================================================== */
-  const Voice = (function () {
-    const synth = window.speechSynthesis || null;
-    let on = true, all = [], ranked = [];
-    // novelty / robotic / low-quality voices to AVOID (the "creepy" ones)
-    const BLACKLIST = /(albert|bad news|bahh|bells|boing|bubbles|cellos|wobble|deranged|good news|jester|organ|superstar|trinoids|whisper|zarvox|junior|ralph|fred|kathy|princess|bruce|agnes|vicki|victoria|eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley|hysterical|pipe|wobble)/i;
-    // natural-sounding voices in rough preference order
-    const GOOD = ["samantha","ava","allison","susan","zoe","joelle","nicky","tom","aaron","alex",
-      "daniel","arthur","oliver","serena","karen","moira","tessa","fiona","nathan","evan",
-      "google us english","google uk english female","google uk english male",
-      "microsoft aria","microsoft jenny","microsoft guy","microsoft zira","microsoft david"];
-    function rank() {
-      if (!synth) return;
-      all = synth.getVoices().filter(v => /^en/i.test(v.lang) && !BLACKLIST.test(v.name));
-      const score = v => {
-        const n = v.name.toLowerCase(); let s = 0;
-        if (/(enhanced|premium|natural|neural|siri)/i.test(v.name)) s += 100;
-        const gi = GOOD.findIndex(g => n.includes(g));
-        if (gi >= 0) s += (80 - gi);
-        if (v.localService) s += 10;
-        if (/en[-_]us/i.test(v.lang)) s += 5;
-        return s;
-      };
-      ranked = all.slice().sort((a, b) => score(b) - score(a));
-    }
-    if (synth) { rank(); synth.onvoiceschanged = rank; }
-    // natural pitch/rate; characters differ mainly by which good voice they use
-    const profiles = {
-      yarden:  { pitch: 1.00, rate: 1.00, vi: 0 },
-      sharon:  { pitch: 1.05, rate: 1.00, vi: 1 },
-      chen:    { pitch: 1.00, rate: 1.04, vi: 2 },
-      roni:    { pitch: 1.03, rate: 1.05, vi: 3 },
-      michael: { pitch: 0.96, rate: 0.96, vi: 4 },
-      _narr:   { pitch: 1.00, rate: 0.98, vi: 5 },
-    };
-    function clean(t) { return t.replace(/[“”"]/g, "").replace(/\s+/g, " ").trim(); }
-    function speak(text, charId) {
-      if (!on || !synth || !text) return;
-      synth.cancel();
-      const u = new SpeechSynthesisUtterance(clean(text));
-      const p = profiles[charId] || profiles._narr;
-      const pool = ranked.length ? ranked : all;
-      if (pool.length) u.voice = pool[p.vi % pool.length];
-      u.pitch = p.pitch; u.rate = p.rate; u.volume = 1;
-      try { synth.speak(u); } catch (e) {}
-    }
-    function stop() { if (synth) try { synth.cancel(); } catch (e) {} }
-    function setOn(v) { on = v; if (!v) stop(); }
-    return { speak, stop, setOn, isOn: () => on, available: !!synth };
   })();
 
   /* ====================================================================
@@ -398,8 +345,6 @@
     // replace placeholders ({name})
     const text = (node.text || "").replace(/\{name\}/g, state.ceoName);
 
-    Voice.speak(text, node.npc || "_narr");
-
     typeLine(text, () => {
       if (node.choices) {
         showChoices(node);
@@ -412,7 +357,6 @@
 
   /* ---- chapter banner ---- */
   function showChapter(ch, done) {
-    Voice.stop();
     el.dialogue.classList.add("hidden");
     el.choices.classList.add("hidden");
     el.chapter.querySelector(".chapter-kicker").textContent = ch.kicker;
@@ -426,7 +370,6 @@
 
   /* ---- title card ---- */
   function showTitlecard(tc, done) {
-    Voice.stop();
     el.dialogue.classList.add("hidden");
     el.choices.classList.add("hidden");
     setBackground("black");
@@ -520,7 +463,6 @@
     el.speaker.textContent = "";
     el.speaker.className = "speaker narration";
     el.dialogue.classList.remove("hidden");
-    Voice.speak(text, "_narr");
     typeLine(text, () => {
       if (lens) {
         const div = document.createElement("div");
@@ -582,7 +524,6 @@
   }
 
   function showDebrief(ending) {
-    Voice.stop();
     el.dialogue.classList.add("hidden");
     el.choices.classList.add("hidden");
     setNpc(null); setCeo(false);
@@ -670,7 +611,6 @@
     state.ceoName = (el.nameInput.value || "").trim() || "CEO";
     state.academic = el.academic.checked;
     Music.setOn(el.musicToggle.checked);
-    Voice.setOn(el.voiceToggle.checked);
     syncAudioButtons();
     el.title.classList.add("hidden");
     beginGame();
@@ -688,16 +628,12 @@
     go(STORY.start);
   }
 
-  /* ---- audio toggle buttons ---- */
+  /* ---- audio toggle button ---- */
   function syncAudioButtons() {
     el.btnMusic.classList.toggle("on", Music.isOn());
     el.btnMusic.classList.toggle("off", !Music.isOn());
-    el.btnVoice.textContent = Voice.isOn() ? "🔊" : "🔇";
-    el.btnVoice.classList.toggle("on", Voice.isOn());
-    el.btnVoice.classList.toggle("off", !Voice.isOn());
   }
   el.btnMusic.addEventListener("click", () => { Music.setOn(!Music.isOn()); syncAudioButtons(); });
-  el.btnVoice.addEventListener("click", () => { Voice.setOn(!Voice.isOn()); syncAudioButtons(); });
 
   el.startBtn.addEventListener("click", start);
 

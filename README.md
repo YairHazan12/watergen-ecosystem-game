@@ -146,9 +146,8 @@ so the game runs **offline** in class:
   blue meeting room, sunny city office, government hall, bright conference room, desert.
 - **Music** — *“Chill Out”* by **Torley Wong**, licensed **CC BY-SA 3.0**
   (via the Internet Archive), in `assets/audio/chillout.mp3`. Looped, soft, with
-  a mute toggle. Attribution is required by the license (shown on the title screen).
-- **Narration** — live browser text-to-speech (Web Speech API). Quality depends
-  on the computer's installed voices; use the 🔊 toggle to mute and read lines aloud.
+  a mute toggle (♪). Attribution is required by the license (shown on the title screen).
+- **Narration** — none. The on-screen text is read by the presenter.
 
 > If you want to swap any image, just replace the file in `assets/` (keep the
 > same filename) or edit the path in `story.js` (characters) / `style.css`
